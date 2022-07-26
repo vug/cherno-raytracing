@@ -27,7 +27,7 @@ public:
 
 		auto image = m_Renderer.GetFinalImage();
 		if (image)
-			ImGui::Image(image->GetDescriptorSet(), {static_cast<float>(image->GetWidth()), static_cast<float>(image->GetHeight())});
+			ImGui::Image(image->GetDescriptorSet(), {static_cast<float>(image->GetWidth()), static_cast<float>(image->GetHeight())}, ImVec2(0, 1), ImVec2(1, 0));
 		ImGui::End();
 		ImGui::PopStyleVar();
 		//ImGui::ShowDemoWindow();

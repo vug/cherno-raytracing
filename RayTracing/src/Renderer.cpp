@@ -20,8 +20,22 @@ void Renderer::OnResize(uint32_t width, uint32_t height)
 
 void Renderer::Render()
 {
-	for (uint32_t i = 0; i < m_FinalImage->GetWidth() * m_FinalImage->GetHeight(); ++i)
-		m_ImageData[i] = Walnut::Random::UInt() | 0xff000000; // keep alpha 1
+	for (uint32_t y = 0; y < m_FinalImage->GetHeight(); ++y)
+	{
+		for (uint32_t x = 0; x < m_FinalImage->GetWidth(); ++x)
+		{
+			const glm::vec2 coord = { static_cast<float>(x) / m_FinalImage->GetWidth(), static_cast<float>(y) / m_FinalImage->GetHeight() };
+			m_ImageData[x + y * m_FinalImage->GetWidth()] = PerPixel(coord);
+		}
+	}
 
 	m_FinalImage->SetData(m_ImageData);
+}
+
+uint32_t Renderer::PerPixel(glm::vec2 coord)
+{
+	uint8_t r = static_cast<uint8_t>(coord.x * 255.0f);
+	uint8_t g = static_cast<uint8_t>(coord.y * 255.0f);
+	
+	return 0xff000000 | (g << 8) | r;
 }
