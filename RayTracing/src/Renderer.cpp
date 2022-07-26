@@ -24,7 +24,8 @@ void Renderer::Render()
 	{
 		for (uint32_t x = 0; x < m_FinalImage->GetWidth(); ++x)
 		{
-			const glm::vec2 coord = { static_cast<float>(x) / m_FinalImage->GetWidth(), static_cast<float>(y) / m_FinalImage->GetHeight() };
+			const glm::vec2 coord01 = { static_cast<float>(x) / m_FinalImage->GetWidth(), static_cast<float>(y) / m_FinalImage->GetHeight() };
+			const glm::vec2 coord = coord01 * 2.0f - 1.0f; // [0, 1] -> [-1, 1]
 			m_ImageData[x + y * m_FinalImage->GetWidth()] = PerPixel(coord);
 		}
 	}
@@ -36,6 +37,27 @@ uint32_t Renderer::PerPixel(glm::vec2 coord)
 {
 	uint8_t r = static_cast<uint8_t>(coord.x * 255.0f);
 	uint8_t g = static_cast<uint8_t>(coord.y * 255.0f);
+
+	glm::vec3 rayOrigin{0.0f, 0.0f, 2.0f};
+	glm::vec3 rayDirection{ coord.x, coord.y, -1.0f };
+	// rayDirection = glm::normalize(rayDirection);
+	float radius = 0.5f; // sphere
+
+	// (bx^2 + by^2)t^2 + 2(axbx + ayby)t + (ax^2 + ay^2 - r^2) = 0
+	// (bx^2 + by^2 + bz^2)t^2 + 2(axbx + ayby + azbz)t + (ax^2 + ay^2 +az^2 - r^2) = 0
+	// a: ray origin
+	// b: ray direction
+	// r: radius of circle/sphere
+	// t: hit distance
+
+	float a = glm::dot(rayDirection, rayDirection);
+	float b = 2.0f * glm::dot(rayOrigin, rayDirection);
+	float c = glm::dot(rayOrigin, rayOrigin) - radius * radius;
+
+	// quadratic discriminant formula: b^2 - 4ac
+	float discriminant = b * b - 4.0f * a * c;
+	if (discriminant >= 0)
+		return 0xffff00ff;
 	
-	return 0xff000000 | (g << 8) | r;
+	return 0xff000000;
 }
