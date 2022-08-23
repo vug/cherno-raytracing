@@ -2,6 +2,18 @@
 
 #include "Walnut/Random.h"
 
+namespace Utils {
+	static uint32_t ConvertToRGBA(const glm::vec4& color)
+	{
+		const auto r = static_cast<uint8_t>(color.r * 255.0f);
+		const auto g = static_cast<uint8_t>(color.g * 255.0f);
+		const auto b = static_cast<uint8_t>(color.b * 255.0f);
+		const auto a = static_cast<uint8_t>(color.a * 255.0f);
+		const uint32_t result = (a << 24) | (b << 16) | (g << 8) | r;
+		return result;
+	}
+}
+
 void Renderer::OnResize(uint32_t width, uint32_t height)
 {
 	if (m_FinalImage)
@@ -26,14 +38,16 @@ void Renderer::Render()
 		{
 			const glm::vec2 coord01 = { static_cast<float>(x) / m_FinalImage->GetWidth(), static_cast<float>(y) / m_FinalImage->GetHeight() };
 			const glm::vec2 coord = coord01 * 2.0f - 1.0f; // [0, 1] -> [-1, 1]
-			m_ImageData[x + y * m_FinalImage->GetWidth()] = PerPixel(coord);
+			glm::vec4 color = PerPixel(coord);
+			color = glm::clamp(color, glm::vec4(0.0f), glm::vec4(1.0f));
+			m_ImageData[x + y * m_FinalImage->GetWidth()] = Utils::ConvertToRGBA(color);
 		}
 	}
 
 	m_FinalImage->SetData(m_ImageData);
 }
 
-uint32_t Renderer::PerPixel(glm::vec2 coord)
+glm::vec4 Renderer::PerPixel(glm::vec2 coord)
 {
 	uint8_t r = static_cast<uint8_t>(coord.x * 255.0f);
 	uint8_t g = static_cast<uint8_t>(coord.y * 255.0f);
@@ -55,9 +69,11 @@ uint32_t Renderer::PerPixel(glm::vec2 coord)
 	float c = glm::dot(rayOrigin, rayOrigin) - radius * radius;
 
 	// quadratic discriminant formula: b^2 - 4ac
+
+	// (-b +- sqrt(discriminant)) / 2a
 	float discriminant = b * b - 4.0f * a * c;
-	if (discriminant >= 0)
-		return 0xffff00ff;
-	
-	return 0xff000000;
+	if (discriminant < 0)
+		return glm::vec4(0, 0, 0, 1);
+
+	return glm::vec4(1, 0, 1, 1);
 }
