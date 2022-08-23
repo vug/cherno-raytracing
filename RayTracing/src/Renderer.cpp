@@ -2,6 +2,8 @@
 
 #include "Walnut/Random.h"
 
+#include <glm/gtx/extended_min_max.hpp>
+
 namespace Utils {
 	static uint32_t ConvertToRGBA(const glm::vec4& color)
 	{
@@ -52,7 +54,7 @@ glm::vec4 Renderer::PerPixel(glm::vec2 coord)
 	uint8_t r = static_cast<uint8_t>(coord.x * 255.0f);
 	uint8_t g = static_cast<uint8_t>(coord.y * 255.0f);
 
-	glm::vec3 rayOrigin{0.0f, 0.0f, 2.0f};
+	glm::vec3 rayOrigin{0.0f, 0.0f, 1.0f};
 	glm::vec3 rayDirection{ coord.x, coord.y, -1.0f };
 	// rayDirection = glm::normalize(rayDirection);
 	float radius = 0.5f; // sphere
@@ -69,11 +71,25 @@ glm::vec4 Renderer::PerPixel(glm::vec2 coord)
 	float c = glm::dot(rayOrigin, rayOrigin) - radius * radius;
 
 	// quadratic discriminant formula: b^2 - 4ac
-
-	// (-b +- sqrt(discriminant)) / 2a
 	float discriminant = b * b - 4.0f * a * c;
 	if (discriminant < 0)
 		return glm::vec4(0, 0, 0, 1);
 
-	return glm::vec4(1, 0, 1, 1);
+	// (-b +- sqrt(discriminant)) / 2a
+	const float sqrtDisc = glm::sqrt(discriminant);
+	float t0 = (-b + sqrtDisc) / (2.0f * a); // distance from origin to hit-point
+	float tClosest = (-b - sqrtDisc) / (2.0f * a);
+
+	glm::vec3 hitPoint = rayOrigin + rayDirection * tClosest;
+	glm::vec3 normal = glm::normalize(hitPoint); // sphere center is not parametrized yet
+
+	glm::vec3 lightDir = glm::normalize(glm::vec3(-1, -1, -1));
+
+	float d = glm::max(glm::dot(normal, -lightDir), 0.0f); // == cos(angle)
+
+	glm::vec3 sphereColor(1, 0, 1);
+	//sphereColor = (hitPoint + 1.f) * 0.5f; // debugging
+	//sphereColor = normal * 0.5f + 0.5f;
+	sphereColor *= d;
+	return glm::vec4(sphereColor, 1);
 }
